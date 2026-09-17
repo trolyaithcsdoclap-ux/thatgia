@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thật Hay Giả? - Trợ lý kiểm chứng thông tin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .gradient-text { background: linear-gradient(to right, #2563eb, #14b8a6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .custom-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.3); opacity: 0; } }
+        .ai-pulse::before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%; border: 3px solid #3b82f6; animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <span class="font-bold text-2xl tracking-tight text-slate-900">Thật Hay <span class="text-blue-600">Giả?</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-5xl font-bold mb-4">Trợ lý <span class="gradient-text">Kiểm chứng Thông tin</span></h1>
+            <p class="text-slate-500 max-w-2xl mx-auto">Đừng vội tin và chia sẻ! Hãy để AI giúp bạn phân tích các dấu hiệu đáng ngờ và hướng dẫn bạn tự tìm ra sự thật.</p>
+        </div>
+
+        <!-- Khung nhập liệu -->
+        <div class="bg-white rounded-2xl p-4 custom-shadow mb-8 border border-slate-100">
+            <div class="relative">
+                <textarea id="queryInput" rows="4" class="w-full bg-slate-50 rounded-xl p-4 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none border border-slate-200 transition" placeholder="Dán đoạn tin nhắn, lời đồn hoặc đường link bạn muốn kiểm tra vào đây..."></textarea>
+                <div class="absolute bottom-4 right-4 flex items-center gap-3">
+                    <span class="text-xs text-slate-400 hidden sm:inline"><i class="fa-solid fa-circle-info mr-1"></i>AI không phán quyết thay bạn</span>
+                    <button id="verifyBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition flex items-center gap-2 shadow-md shadow-blue-500/30">
+                        <i class="fa-solid fa-magnifying-glass"></i> Phân tích
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trạng thái Loading -->
+        <div id="loadingState" class="hidden flex-col items-center justify-center py-12">
+            <div class="relative w-16 h-16 flex items-center justify-center mb-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl z-10 ai-pulse"><i class="fa-solid fa-robot"></i></div>
+            </div>
+            <p class="text-slate-500 font-medium animate-pulse">Trợ lý AI đang đọc và phân tích dữ liệu...</p>
+        </div>
+
+        <!-- Khu vực Kết quả -->
+        <div id="resultState" class="hidden opacity-0 transition-opacity duration-500 space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Biểu đồ -->
+                <div class="col-span-1 bg-white rounded-2xl p-6 custom-shadow border border-slate-100 text-center flex flex-col items-center justify-center">
+                    <h3 class="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-4">Mức độ tin cậy</h3>
+                    <div class="relative w-40 h-40">
+                        <canvas id="gaugeChart"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center flex-col mt-4">
+                            <span id="scoreText" class="text-4xl font-bold text-slate-800">0%</span>
+                        </div>
+                    </div>
+                    <p id="scoreLabel" class="mt-4 font-medium px-4 py-1.5 rounded-full text-sm"></p>
+                </div>
+
+                <!-- Phân tích 5 Tiêu chí -->
+                <div class="col-span-1 md:col-span-2 space-y-4">
+                    <div class="bg-blue-50 rounded-2xl p-5 border border-blue-100">
+                        <div class="flex items-start gap-3">
+                            <div class="text-blue-500 mt-1"><i class="fa-solid fa-comment-dots text-xl"></i></div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 mb-1">Nhận xét tổng quan</h4>
+                                <p id="aiAnalysis" class="text-slate-700 text-sm leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-slate-100 custom-shadow">
+                        <h4 class="font-bold text-slate-800 mb-3 border-b pb-2"><i class="fa-solid fa-scale-balanced text-indigo-500 mr-2"></i>Đánh giá theo 5 tiêu chí</h4>
+                        <div id="criteriaList" class="space-y-3 text-sm">
+                            <!-- JS Render criteria -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thám tử mạng Google & Lời khuyên S.T.O.P -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Google Search -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 custom-shadow">
+                    <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-brands fa-google text-blue-500"></i> Tập làm "Thám tử mạng"
+                    </h4>
+                    <p class="text-xs text-slate-500 mb-4">Hãy tự mình kiểm chứng bằng cách click vào các từ khóa do AI gợi ý dưới đây:</p>
+                    
+                    <div id="googleQueries" class="space-y-3 mb-4">
+                        <!-- JS Render Google Queries -->
+                    </div>
+
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-100 flex gap-2 items-start mt-4">
+                        <i class="fa-regular fa-lightbulb text-amber-500 mt-0.5"></i>
+                        <p id="googleTip" class="text-xs text-amber-800 font-medium"></p>
+                    </div>
+                </div>
+
+                <!-- Lời khuyên S.T.O.P -->
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 custom-shadow text-white relative overflow-hidden">
+                    <h4 class="font-bold mb-4 flex items-center gap-2 relative z-10"><i class="fa-solid fa-hand-sparkles text-yellow-400"></i> AI Gợi ý hành động</h4>
+                    <div class="space-y-4 relative z-10 text-sm" id="stopAdviceList">
+                        <!-- JS Render S.T.O.P -->
+                    </div>
+                    <i class="fa-solid fa-shield-cat absolute -bottom-4 -right-4 text-8xl text-slate-800 opacity-50 z-0"></i>
+                </div>
+            </div>
+
+            <!-- Các liên kết AI đã phân tích -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 custom-shadow">
+                <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-link text-indigo-500"></i> Các nguồn tin AI đã phân tích</h4>
+                <div id="aiLinksList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- JS Render AI Links -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let gaugeChartInstance = null;
+
+        document.getElementById('verifyBtn').addEventListener('click', async () => {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) return alert("Vui lòng nhập nội dung cần kiểm chứng!");
+
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('resultState').classList.remove('opacity-100');
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('loadingState').classList.add('flex');
+
+            try {
+                // KẾT NỐI VỚI BACKEND PYTHON Ở ĐÂY
+                const response = await fetch('http://127.0.0.1:5000/api/verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ query: query })
+                });
+                
+                if (!response.ok) throw new Error("API Lỗi");
+                const result = await response.json();
+                renderResult(result);
+            } catch (error) {
+                console.error("Lỗi API thật, chuyển sang Mock Data:", error);
+                // Fallback nếu server sập
+                setTimeout(() => { renderResult(getMockResponse(query)); }, 1000);
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('loadingState').classList.remove('flex');
+            }
+        });
+
+        function renderResult(data) {
+            const resultDiv = document.getElementById('resultState');
+            resultDiv.classList.remove('hidden');
+            setTimeout(() => { resultDiv.classList.add('opacity-100'); }, 50);
+
+            // Điểm & Nhận xét
+            document.getElementById('scoreText').innerText = data.reliability_score + '%';
+            document.getElementById('aiAnalysis').innerText = data.analysis;
+
+            const scoreLabel = document.getElementById('scoreLabel');
+            let colorHex = '#eab308';
+            if (data.reliability_score >= 70) {
+                scoreLabel.innerText = "Có vẻ đáng tin";
+                scoreLabel.className = "mt-4 font-bold px-4 py-1.5 rounded-full text-sm bg-green-100 text-green-700";
+                colorHex = '#22c55e';
+            } else if (data.reliability_score <= 30) {
+                scoreLabel.innerText = "Nguy cơ Tin giả cao";
+                scoreLabel.className = "mt-4 font-bold px-4 py-1.5 rounded-full text-sm bg-red-100 text-red-700";
+                colorHex = '#ef4444';
+            } else {
+                scoreLabel.innerText = "Cần kiểm chứng thêm";
+                scoreLabel.className = "mt-4 font-bold px-4 py-1.5 rounded-full text-sm bg-yellow-100 text-yellow-700";
+            }
+            drawGaugeChart(data.reliability_score, colorHex);
+
+            // 5 Tiêu chí
+            const criteriaList = document.getElementById('criteriaList');
+            criteriaList.innerHTML = data.criteria_breakdown.map(c => `
+                <div class="flex justify-between items-start gap-4">
+                    <div class="font-medium text-slate-700 w-1/3 shrink-0">${c.name}</div>
+                    <div class="text-slate-500 w-2/3">${c.comment} <span class="font-bold text-xs ml-1 ${c.score===2?'text-green-600':(c.score===1?'text-yellow-600':'text-red-500')}">(${c.score}/2đ)</span></div>
+                </div>
+            `).join('');
+
+            // Google Queries
+            document.getElementById('googleQueries').innerHTML = data.google_search.queries.map(q => `
+                <a href="https://www.google.com/search?q=${encodeURIComponent(q)}" target="_blank" class="block bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg p-3 transition group">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-slate-700 group-hover:text-blue-700">${q}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-slate-400 group-hover:text-blue-500"></i>
+                    </div>
+                </a>
+            `).join('');
+            document.getElementById('googleTip').innerText = data.google_search.tip;
+
+            // S.T.O.P
+            document.getElementById('stopAdviceList').innerHTML = `
+                <div class="flex gap-3"><span class="font-bold text-red-400 w-5">S</span><p class="text-slate-300"><span class="text-white font-medium">Dừng lại:</span> ${data.stop_advice.S}</p></div>
+                <div class="flex gap-3"><span class="font-bold text-yellow-400 w-5">T</span><p class="text-slate-300"><span class="text-white font-medium">Suy nghĩ:</span> ${data.stop_advice.T}</p></div>
+                <div class="flex gap-3"><span class="font-bold text-blue-400 w-5">O</span><p class="text-slate-300"><span class="text-white font-medium">Quan sát:</span> ${data.stop_advice.O}</p></div>
+                <div class="flex gap-3"><span class="font-bold text-green-400 w-5">P</span><p class="text-slate-300"><span class="text-white font-medium">Quyết định:</span> ${data.stop_advice.P}</p></div>
+            `;
+
+            // Links
+            document.getElementById('aiLinksList').innerHTML = data.ai_analyzed_links.map(l => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h5 class="font-bold text-slate-800 text-sm line-clamp-1 flex-1 pr-2">${l.title}</h5>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${l.reliability==='Cao'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${l.reliability}</span>
+                    </div>
+                    <a href="${l.url}" target="_blank" class="text-xs text-blue-500 hover:underline break-all mb-2 block">${l.url}</a>
+                    <p class="text-xs text-slate-600 mt-2 pt-2 border-t border-slate-200"><i class="fa-solid fa-robot mr-1 text-slate-400"></i> ${l.comment}</p>
+                </div>
+            `).join('');
+        }
+
+        function drawGaugeChart(score, colorHex) {
+            const ctx = document.getElementById('gaugeChart').getContext('2d');
+            if (gaugeChartInstance) gaugeChartInstance.destroy();
+            gaugeChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { datasets: [{ data: [score, 100 - score], backgroundColor: [colorHex, '#f1f5f9'], borderWidth: 0, circumference: 270, rotation: 225, borderRadius: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { tooltip: { enabled: false }, legend: { display: false } }, animation: { animateScale: true, animateRotate: true } }
+            });
+        }
+
+        // Mock data nếu không có Backend
+        function getMockResponse(query) {
+            return {
+                "reliability_score": 15,
+                "analysis": "Dữ liệu đang chạy ở chế độ Offline (Mock Data). Nội dung bạn nhập có dấu hiệu là tin đồn truyền miệng.",
+                "criteria_breakdown": [
+                    {"name": "Nguồn đăng", "score": 0, "comment": "Không rõ nguồn, chỉ là tin đồn."},
+                    {"name": "Người đăng", "score": 0, "comment": "Ẩn danh hoặc bạn bè đồn đại."},
+                    {"name": "Dẫn chứng", "score": 0, "comment": "Không có văn bản chứng minh."},
+                    {"name": "Xác nhận báo chí", "score": 0, "comment": "Chưa có báo nào xác nhận."},
+                    {"name": "Cách trình bày", "score": 1, "comment": "Từ ngữ thiếu trang trọng."}
+                ],
+                "stop_advice": {
+                    "S": "Tuyệt đối không vội chia sẻ hoặc lan truyền.",
+                    "T": "Hãy nghĩ xem liệu thông tin này có mục đích trêu đùa không.",
+                    "O": "Tìm kiếm trên website trường hoặc báo chính thống.",
+                    "P": "Chỉ tin khi có thông báo chính thức."
+                },
+                "google_search": {
+                    "queries": ["Sự thật về " + query.substring(0, 15), "Đính chính " + query.substring(0, 15)],
+                    "tip": "Khi tìm kiếm hãy thêm chữ 'Sự thật' hoặc 'Đính chính' vào trước!"
+                },
+                "ai_analyzed_links": [
+                    { "title": "Cổng thông tin điện tử", "url": "https://chinhphu.vn", "reliability": "Cao", "comment": "Trang web chính thức luôn đáng tin cậy." }
+                ]
+            };
+        }
+    </script>
+</body>
+</html>
