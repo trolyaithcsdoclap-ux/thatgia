@@ -1,0 +1,27 @@
+Test Case 1: Tin thật / Thông tin chính thống (Độ tin cậy cao: 90% - 100%)
+Nội dung dán vào:
+
+"Theo thông tin từ Cổng thông tin điện tử Chính phủ, Việt Nam hiện có tổng cộng 63 đơn vị hành chính cấp tỉnh gồm 58 tỉnh và 5 thành phố trực thuộc Trung ương."
+
+Kỳ vọng AI phân tích: Điểm uy tín rất cao (~90-100%). AI xác nhận nguồn từ cơ quan nhà nước, có dẫn chứng rõ ràng, văn phong khách quan.
+
+🟡 Test Case 2: Tin đồn lấp lửng / Chưa xác thực (Độ tin cậy trung bình: 40% - 60%)
+Nội dung dán vào:
+
+"Mấy nay nghe đồn trường mình sắp đổi thời khóa biểu học sang 2 buổi/ngày bắt đầu từ tuần sau, không biết có thật không mọi người?"
+
+Kỳ vọng AI phân tích: Điểm mức trung bình (~50%). Dấu hiệu nhận biết là tin đồn lan truyền qua mạng xã hội, chưa có văn bản mộc đỏ chính thức từ nhà trường, cần nhắc học sinh hỏi giáo viên chủ nhiệm.
+
+🔴 Test Case 3: Tin giả lừa đảo / Giật gân học đường (Độ tin cậy thấp: 0% - 20%)
+Nội dung dán vào:
+
+"Ê tụi mày, nghe nói mai trường cho nghỉ học toàn trường vì có sự cố, chia sẻ ngay cho các lớp khác biết đi đừng đến trường nhé!"
+
+Kỳ vọng AI phân tích: Điểm cực thấp (~15%). Tin giả câu view, ngôn từ kích động, dùng từ ngữ học sinh lôi kéo, không có nguồn chính thống. AI sẽ kích hoạt lời khuyên S.T.O.P mức độ khẩn cấp (Dừng lại ngay, không lan truyền).
+
+🔵 Test Case 4: Tin y học/sức khỏe dân gian (Độ tin cậy cần kiểm chứng: 30% - 50%)
+Nội dung dán vào:
+
+"Mẹo chữa đau họng cấp tốc: Chỉ cần ngậm một tép tỏi sống đập dập trong 15 phút là khỏi hẳn virus không cần uống thuốc."
+
+Kỳ vọng AI phân tích: Điểm thấp đến trung bình. Không có nghiên cứu y khoa chính thống bảo trợ, mang tính chất mẹo dân gian chưa được Bộ Y tế kiểm chứng.
