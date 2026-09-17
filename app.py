@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
-from groq import Groq
 import os
 
 # Import hàm xử lý AI từ thư mục utils
