@@ -1,0 +1,5 @@
+Flask3.0.2
+Flask-Cors4.0.0
+Flask-SQLAlchemy3.1.1
+python-dotenv1.0.1
+groq==0.4.2
