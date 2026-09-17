@@ -1,5 +1,6 @@
 import json
 import requests
+import os
 
 SYSTEM_PROMPT = """
 Bạn là trợ lý AI trên web "Thật Hay Giả?", hỗ trợ học sinh kiểm chứng tin tức.
@@ -24,7 +25,7 @@ Luôn trả về định dạng JSON chính xác gồm:
         {"name": "Người đăng", "score": <0, 1 hoặc 2>, "comment": "<giải thích>"},
         {"name": "Dẫn chứng", "score": <0, 1 hoặc 2>, "comment": "<giải thích>"},
         {"name": "Xác nhận báo chí", "score": <0, 1 hoặc 2>, "comment": "<giải thích>"},
-        {"name": "Trình bày", "score": <0, 1 hoặc 2>, "comment": "<giải thích>"}
+        {"name": "Cách trình bày", "score": <0, 1 hoặc 2>, "comment": "<giải thích>"}
     ],
     "stop_advice": {"S": "...", "T": "...", "O": "...", "P": "..."},
     "google_search": {"queries": ["từ khóa 1", "từ khóa 2"], "tip": "..."},
@@ -43,11 +44,14 @@ def show_error_on_web(error_message):
     }
 
 def analyze_information(user_query):
-    # Sử dụng Key của trực tiếp
-    api_key = "AQ.Ab8RN6KqWJoiGAvT9PhVeIS2tHFqiHkLGfEiLq8iJ4Oj0yu_Hg"
+    # Lấy API Key an toàn từ biến môi trường của Vercel
+    api_key = os.environ.get("GEMINI_API_KEY")
     
-    # Sử dụng model gemini-3.1-flash-lite có quota RPD/RPM cao nhất
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={api_key}"
+    if not api_key:
+        return show_error_on_web("CHƯA CẤU HÌNH GEMINI_API_KEY TRÊN VERCEL!")
+    
+    # Sử dụng model gemini-1.5-flash (Model chuẩn và nhanh nhất của Google hiện tại)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
     data = {
@@ -63,11 +67,9 @@ def analyze_information(user_query):
     }
     
     try:
-        print("🔄 Đang gửi dữ liệu tới máy chủ Google Gemini 3.1 Flash Lite...")
         response = requests.post(url, headers=headers, json=data)
         
         if response.status_code == 200:
-            print("✅ Đã nhận kết quả thành công từ Gemini!")
             response_json = response.json()
             response_text = response_json['candidates'][0]['content']['parts'][0]['text']
             result_json = json.loads(response_text)
@@ -87,9 +89,7 @@ def analyze_information(user_query):
             
         else:
             error_msg = response.json().get("error", {}).get("message", response.text)
-            print(f"❌ LỖI GOOGLE GEMINI: {error_msg}")
-            return show_error_on_web(f"GOOGLE GEMINI TỪ CHỐI KẾT NỐI: {error_msg}")
+            return show_error_on_web(f"TỪ CHỐI KẾT NỐI: {error_msg}")
             
     except Exception as e:
-        print(f"❌ LỖI MẠNG CỤC BỘ: {str(e)}")
         return show_error_on_web(f"LỖI INTERNET: {str(e)}")
