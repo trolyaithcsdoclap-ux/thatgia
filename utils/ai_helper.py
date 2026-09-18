@@ -51,7 +51,7 @@ def analyze_information(user_query):
         return show_error_on_web("CHƯA CẤU HÌNH GEMINI_API_KEY TRÊN VERCEL!")
     
     # Sử dụng model gemini-1.5-flash (Model chuẩn và nhanh nhất của Google hiện tại)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
     data = {
