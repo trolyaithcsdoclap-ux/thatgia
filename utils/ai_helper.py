@@ -36,7 +36,7 @@ Luôn trả về định dạng JSON chính xác gồm:
 def show_error_on_web(error_message):
     return {
         "reliability_score": 0,
-        "analysis": f"🚨 HỆ THỐNG BÁO LỖI: {error_message}",
+        "analysis": f"🚨 LỖI API: {error_message}",
         "criteria_breakdown": [{"name": "Lỗi", "score": 0, "comment": "Lỗi hệ thống"}] * 5,
         "stop_advice": {"S": "Lỗi", "T": "Lỗi", "O": "Lỗi", "P": "Lỗi"},
         "google_search": {"queries": ["Cách sửa lỗi mạng"], "tip": "Hãy thử lại sau."},
@@ -44,26 +44,24 @@ def show_error_on_web(error_message):
     }
 
 def analyze_information(user_query):
-    # Lấy API Key an toàn từ biến môi trường của Vercel
+    # Lấy API Key
     api_key = os.environ.get("GEMINI_API_KEY")
-    
     if not api_key:
         return show_error_on_web("CHƯA CẤU HÌNH GEMINI_API_KEY TRÊN VERCEL!")
     
-    # Sử dụng model gemini-1.5-flash (Model chuẩn và nhanh nhất của Google hiện tại)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    # Dùng model gemini-1.5-flash an toàn nhất
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
+    
+    # GỘP CHUNG PROMPT VÀ CÂU HỎI (Cách này đảm bảo Google không từ chối kết nối)
+    combined_text = f"{SYSTEM_PROMPT}\n\n--- THÔNG TIN NGƯỜI DÙNG CẦN KIỂM CHỨNG ---\n{user_query}"
+    
+    # Cấu trúc payload đơn giản nhất
     data = {
-        "system_instruction": {
-            "parts": [{"text": SYSTEM_PROMPT}]
-        },
         "contents": [{
-            "parts": [{"text": user_query}]
-        }],
-        "generationConfig": {
-            "response_mime_type": "application/json",
-        }
+            "parts": [{"text": combined_text}]
+        }]
     }
     
     try:
@@ -72,7 +70,11 @@ def analyze_information(user_query):
         if response.status_code == 200:
             response_json = response.json()
             response_text = response_json['candidates'][0]['content']['parts'][0]['text']
-            result_json = json.loads(response_text)
+            
+            # Làm sạch dữ liệu (Xóa các ký tự thừa markdown ```json nếu AI tự thêm vào)
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            
+            result_json = json.loads(clean_text)
             
             if not result_json.get("google_search") or not result_json["google_search"].get("queries"):
                 result_json["google_search"] = {
@@ -82,7 +84,7 @@ def analyze_information(user_query):
                 
             if not result_json.get("ai_analyzed_links"):
                 result_json["ai_analyzed_links"] = [
-                    {"title": "Cổng thông tin Điện tử", "url": "https://chinhphu.vn", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
+                    {"title": "Cổng thông tin Điện tử", "url": "[https://chinhphu.vn](https://chinhphu.vn)", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
                 ]
                 
             return result_json
@@ -92,4 +94,4 @@ def analyze_information(user_query):
             return show_error_on_web(f"TỪ CHỐI KẾT NỐI: {error_msg}")
             
     except Exception as e:
-        return show_error_on_web(f"LỖI INTERNET: {str(e)}")
+        return show_error_on_web(f"LỖI HỆ THỐNG: {str(e)}")
