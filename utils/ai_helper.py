@@ -44,20 +44,19 @@ def show_error_on_web(error_message):
     }
 
 def analyze_information(user_query):
-    # Lấy API Key
+    # Lấy API Key từ biến môi trường của Vercel
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return show_error_on_web("CHƯA CẤU HÌNH GEMINI_API_KEY TRÊN VERCEL!")
     
-    # Dùng model gemini-1.5-flash an toàn nhất
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # SỬ DỤNG MODEL GEMINI-PRO (ỔN ĐỊNH VÀ TƯƠNG THÍCH NHẤT)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
     
-    # GỘP CHUNG PROMPT VÀ CÂU HỎI (Cách này đảm bảo Google không từ chối kết nối)
+    # GỘP CHUNG PROMPT VÀ CÂU HỎI ĐỂ VƯỢT QUA LỖI API
     combined_text = f"{SYSTEM_PROMPT}\n\n--- THÔNG TIN NGƯỜI DÙNG CẦN KIỂM CHỨNG ---\n{user_query}"
     
-    # Cấu trúc payload đơn giản nhất
     data = {
         "contents": [{
             "parts": [{"text": combined_text}]
@@ -71,7 +70,7 @@ def analyze_information(user_query):
             response_json = response.json()
             response_text = response_json['candidates'][0]['content']['parts'][0]['text']
             
-            # Làm sạch dữ liệu (Xóa các ký tự thừa markdown ```json nếu AI tự thêm vào)
+            # Xử lý chuỗi JSON để loại bỏ các ký tự thừa markdown (nếu có)
             clean_text = response_text.replace("```json", "").replace("```", "").strip()
             
             result_json = json.loads(clean_text)
@@ -84,7 +83,7 @@ def analyze_information(user_query):
                 
             if not result_json.get("ai_analyzed_links"):
                 result_json["ai_analyzed_links"] = [
-                    {"title": "Cổng thông tin Điện tử", "url": "[https://chinhphu.vn](https://chinhphu.vn)", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
+                    {"title": "Cổng thông tin Điện tử", "url": "https://chinhphu.vn", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
                 ]
                 
             return result_json
