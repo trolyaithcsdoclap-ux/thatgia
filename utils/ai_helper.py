@@ -54,7 +54,7 @@ def analyze_information(user_query):
         genai.configure(api_key=api_key)
         
         # Gọi thẳng model gemini-1.5-flash (phiên bản ổn định và thông minh nhất hiện tại)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-3.1-flash-lite')
         
         # Gộp Prompt và Nội dung
         combined_text = f"{SYSTEM_PROMPT}\n\n--- THÔNG TIN NGƯỜI DÙNG CẦN KIỂM CHỨNG ---\n{user_query}"
