@@ -1,6 +1,6 @@
 import json
-import requests
 import os
+import google.generativeai as genai
 
 SYSTEM_PROMPT = """
 Bạn là trợ lý AI trên web "Thật Hay Giả?", hỗ trợ học sinh kiểm chứng tin tức.
@@ -36,7 +36,7 @@ Luôn trả về định dạng JSON chính xác gồm:
 def show_error_on_web(error_message):
     return {
         "reliability_score": 0,
-        "analysis": f"🚨 LỖI API: {error_message}",
+        "analysis": f"🚨 LỖI HỆ THỐNG: {error_message}",
         "criteria_breakdown": [{"name": "Lỗi", "score": 0, "comment": "Lỗi hệ thống"}] * 5,
         "stop_advice": {"S": "Lỗi", "T": "Lỗi", "O": "Lỗi", "P": "Lỗi"},
         "google_search": {"queries": ["Cách sửa lỗi mạng"], "tip": "Hãy thử lại sau."},
@@ -44,53 +44,41 @@ def show_error_on_web(error_message):
     }
 
 def analyze_information(user_query):
-    # Lấy API Key từ biến môi trường của Vercel
+    # Lấy API Key từ Vercel
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return show_error_on_web("CHƯA CẤU HÌNH GEMINI_API_KEY TRÊN VERCEL!")
     
-    # SỬ DỤNG MODEL GEMINI-PRO (ỔN ĐỊNH VÀ TƯƠNG THÍCH NHẤT)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
-    
-    headers = {'Content-Type': 'application/json'}
-    
-    # GỘP CHUNG PROMPT VÀ CÂU HỎI ĐỂ VƯỢT QUA LỖI API
-    combined_text = f"{SYSTEM_PROMPT}\n\n--- THÔNG TIN NGƯỜI DÙNG CẦN KIỂM CHỨNG ---\n{user_query}"
-    
-    data = {
-        "contents": [{
-            "parts": [{"text": combined_text}]
-        }]
-    }
-    
     try:
-        response = requests.post(url, headers=headers, json=data)
+        # Khởi tạo thư viện chính thức của Google
+        genai.configure(api_key=api_key)
         
-        if response.status_code == 200:
-            response_json = response.json()
-            response_text = response_json['candidates'][0]['content']['parts'][0]['text']
+        # Gọi thẳng model gemini-1.5-flash (phiên bản ổn định và thông minh nhất hiện tại)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Gộp Prompt và Nội dung
+        combined_text = f"{SYSTEM_PROMPT}\n\n--- THÔNG TIN NGƯỜI DÙNG CẦN KIỂM CHỨNG ---\n{user_query}"
+        
+        # Yêu cầu AI phân tích
+        response = model.generate_content(combined_text)
+        
+        # Xử lý kết quả JSON
+        clean_text = response.text.replace("```json", "").replace("```", "").strip()
+        result_json = json.loads(clean_text)
+        
+        # Bổ sung dữ liệu mồi nếu AI bỏ sót
+        if not result_json.get("google_search") or not result_json["google_search"].get("queries"):
+            result_json["google_search"] = {
+                "queries": [f"Sự thật về {user_query[:20]}...", f"Đính chính {user_query[:20]}..."],
+                "tip": "MẸO: Khi tìm kiếm hãy thêm chữ 'Sự thật' hoặc 'Đính chính' vào trước!"
+            }
             
-            # Xử lý chuỗi JSON để loại bỏ các ký tự thừa markdown (nếu có)
-            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+        if not result_json.get("ai_analyzed_links"):
+            result_json["ai_analyzed_links"] = [
+                {"title": "Cổng thông tin Điện tử", "url": "https://chinhphu.vn", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
+            ]
             
-            result_json = json.loads(clean_text)
-            
-            if not result_json.get("google_search") or not result_json["google_search"].get("queries"):
-                result_json["google_search"] = {
-                    "queries": [f"Sự thật về {user_query[:20]}...", f"Đính chính {user_query[:20]}..."],
-                    "tip": "MẸO: Khi tìm kiếm hãy thêm chữ 'Sự thật' hoặc 'Đính chính' vào trước!"
-                }
-                
-            if not result_json.get("ai_analyzed_links"):
-                result_json["ai_analyzed_links"] = [
-                    {"title": "Cổng thông tin Điện tử", "url": "https://chinhphu.vn", "reliability": "Cao", "comment": "Luôn tra cứu tại trang web chính thức."}
-                ]
-                
-            return result_json
-            
-        else:
-            error_msg = response.json().get("error", {}).get("message", response.text)
-            return show_error_on_web(f"TỪ CHỐI KẾT NỐI: {error_msg}")
-            
+        return result_json
+        
     except Exception as e:
-        return show_error_on_web(f"LỖI HỆ THỐNG: {str(e)}")
+        return show_error_on_web(str(e))
